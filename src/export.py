@@ -7,6 +7,7 @@ import os # Needed for path operations and directory creation
 import shutil # Needed for efficient file saving from requests stream
 import unicodedata # Needed for filename sanitization
 from urllib.parse import urlparse # Needed to help extract filename from URL
+import bottoken
 
 # --- Helper Function for Sanitizing Filenames ---
 def sanitize_filename(filename):
