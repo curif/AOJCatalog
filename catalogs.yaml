@@ -1,0 +1,5 @@
+# catalogs.yaml
+marketplace:
+  - CatalogName: catalog 1
+    Description: the first one
+    Url: https://raw.githubusercontent.com/curif/AOJCatalog/refs/heads/main/cabinets.csv
