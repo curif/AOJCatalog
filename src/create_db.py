@@ -52,19 +52,20 @@ def initialize_database(db_path):
             CREATE TABLE IF NOT EXISTS Cabinet (
                 CatalogName TEXT NOT NULL,
                 Name TEXT NOT NULL,
-                Game TEXT NOT NULL,
+                Game TEXT,
                 CreationDate TEXT,
                 Version TEXT,
                 RomName TEXT,
-                Url TEXT NOT NULL,
+                Url TEXT,
                 Description TEXT,
                 Core TEXT,
                 Creator TEXT,
-                Notes TEXT,
-                PRIMARY KEY (CatalogName, Name),
-                FOREIGN KEY (CatalogName) REFERENCES Catalog(CatalogName) ON DELETE CASCADE
-            );
+                Notes TEXT
+                );
         """)
+        #PRIMARY KEY (CatalogName, Name),
+        #FOREIGN KEY (CatalogName) REFERENCES Catalog(CatalogName) ON DELETE CASCADE
+            
         print("-> Executed: CREATE TABLE IF NOT EXISTS Cabinet")
 
         # --- Create Indexes for Performance ---

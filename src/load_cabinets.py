@@ -21,7 +21,7 @@ IDX_CREATOR = 8
 IDX_NOTES = 9
 
 # Minimum columns expected in a valid data row (Name, Url, Game are required by DB schema)
-MIN_REQUIRED_COLUMNS = max(IDX_NAME, IDX_URL_CABINET, IDX_GAME) + 1
+MIN_REQUIRED_COLUMNS = 1
 
 def _get_value_or_none(row, index):
     """Safely gets a value from a list (CSV row) by index, returning None if index is out of bounds."""
@@ -87,7 +87,7 @@ def load_cabinets_from_catalogs(db_path):
             # --- 3. Download the CSV file ---
             csv_content = None
             try:
-                response = requests.get(catalog_url, timeout=30) # 30 second timeout
+                response = requests.get(catalog_url, timeout=60) # 60 second timeout
                 response.raise_for_status() # Raises HTTPError for bad responses (4xx or 5xx)
                 csv_content = response.text
                 print(f"  Successfully downloaded content from URL.")
@@ -108,7 +108,6 @@ def load_cabinets_from_catalogs(db_path):
             rows_processed = 0
             rows_inserted = 0
             rows_failed = 0
-            processed_keys_in_catalog = set() # Track (CatalogName, Name) pairs within this specific CSV
 
             try:
                 # Use io.StringIO to treat the string content like a file
@@ -136,30 +135,12 @@ def load_cabinets_from_catalogs(db_path):
 
                     # Extract data using indices
                     name = _get_value_or_none(row, IDX_NAME)
-                    url_cabinet = _get_value_or_none(row, IDX_URL_CABINET) # Cabinet specific URL
-                    game = _get_value_or_none(row, IDX_GAME)
-
+                    
                     # --- Validation based on DB Schema (NOT NULL fields) ---
                     if not name:
                         print(f"  Skipping row {row_number}: Required field 'Name' (column {IDX_NAME + 1}) is missing or empty.", file=sys.stderr)
                         rows_failed += 1
                         continue
-                    if not game:
-                        print(f"  Skipping row {row_number}: Required field 'Game' (column {IDX_GAME + 1}) is missing or empty.", file=sys.stderr)
-                        rows_failed += 1
-                        continue
-                    if not url_cabinet:
-                         print(f"  Skipping row {row_number}: Required field 'Url' (column {IDX_URL_CABINET + 1}) is missing or empty.", file=sys.stderr)
-                         rows_failed += 1
-                         continue
-
-                    # Check for duplicates within this specific catalog load
-                    cabinet_key = (catalog_name, name)
-                    if cabinet_key in processed_keys_in_catalog:
-                        print(f"  Skipping row {row_number}: Duplicate Name '{name}' found within this CSV for catalog '{catalog_name}'.", file=sys.stderr)
-                        rows_failed += 1
-                        continue
-                    processed_keys_in_catalog.add(cabinet_key)
 
 
                     # Extract optional fields
@@ -170,6 +151,8 @@ def load_cabinets_from_catalogs(db_path):
                     core = _get_value_or_none(row, IDX_CORE)
                     creator = _get_value_or_none(row, IDX_CREATOR)
                     notes = _get_value_or_none(row, IDX_NOTES)
+                    url_cabinet = _get_value_or_none(row, IDX_URL_CABINET) # Cabinet specific URL
+                    game = _get_value_or_none(row, IDX_GAME)
 
                     # Prepare data tuple for insertion (order must match SQL)
                     data_tuple = (
