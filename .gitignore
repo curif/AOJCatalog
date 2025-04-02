@@ -1,2 +1,3 @@
 src/downloads/*
 src/token.py
+*.db
