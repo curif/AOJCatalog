@@ -1,5 +1,5 @@
 # catalogs.yaml
 marketplace:
-  - CatalogName: catalog 1
-    Description: the first one
+  - CatalogName: main
+    Description: Main catalog based on the AgeOfJoy-Cabinets spreadsheet created by @Angelicide 
     Url: https://raw.githubusercontent.com/curif/AOJCatalog/refs/heads/main/cabinets.csv
