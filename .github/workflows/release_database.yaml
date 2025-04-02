@@ -1,0 +1,61 @@
+name: Build and Release Marketplace Database
+
+# Trigger the workflow only when a new release is published
+on:
+  release:
+    types: [published] # Runs after you hit "Publish release" on GitHub
+
+permissions:
+  contents: write # Needed to write release assets
+
+jobs:
+  build-db:
+    name: Build Marketplace DB
+    runs-on: ubuntu-latest # Use a standard Linux runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        # Checks out the specific commit tagged for the release
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # Or your preferred Python version
+          cache: 'pip' # Cache pip dependencies
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: 1. Create Database Schema
+        run: python create_db.py --db-path ./marketplace.db
+        # Creates the marketplace.db file with tables/indexes in the workspace
+
+      - name: 2. Load Catalogs from YAML
+        run: python load_yaml.py --db-path ./marketplace.db --yaml-path ./catalogs.yaml
+        # Populates the Catalog table using catalogs.yaml from the repo root
+
+      - name: 3. Load Cabinets from Catalogs (Downloads CSVs)
+        run: python load_cabinets.py --db-path ./marketplace.db
+        # Reads Catalog table, downloads/processes CSVs, populates Cabinet table
+
+      - name: Verify Database File Exists
+        run: |
+          if [ -f ./marketplace.db ]; then
+            echo "marketplace.db successfully created."
+            ls -lh ./marketplace.db # Show file size
+          else
+            echo "Error: marketplace.db not found after scripts execution!"
+            exit 1
+          fi
+
+      - name: Upload Release Asset (marketplace.db)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }} # URL provided by the release event
+          asset_path: ./marketplace.db      # Path to the file to upload
+          asset_name: marketplace.db       # Name of the asset in the release
+          asset_content_type: application/vnd.sqlite3 # Correct MIME type for SQLite3
+          # Alternatively use: application/octet-stream if unsure
