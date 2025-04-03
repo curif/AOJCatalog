@@ -26,13 +26,13 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: 1. Create Database Schema
-        run: python create_db.py --db-path ./marketplace.db
+        run: python src/create_db.py --db-path ./marketplace.db
 
       # --- ADD THIS STEP ---
       - name: 1.5. Update Build Info Table
         run: |
           BUILD_TIMESTAMP=$(date --iso-8601=seconds) # Get UTC timestamp
-          python update_build_info.py \
+          python src/update_build_info.py \
             --db-path ./marketplace.db \
             --tag "${{ github.event.release.tag_name }}" \
             --commit-sha "${{ github.sha }}" \
@@ -40,10 +40,10 @@ jobs:
       # --- END OF ADDED STEP ---
 
       - name: 2. Load Catalogs from YAML
-        run: python load_yaml.py --db-path ./marketplace.db --yaml-path ./catalogs.yaml
+        run: python src/load_yaml.py --db-path ./marketplace.db --yaml-path ./catalogs.yaml
 
       - name: 3. Load Cabinets from Catalogs (Downloads CSVs)
-        run: python load_cabinets.py --db-path ./marketplace.db
+        run: python src/load_cabinets.py --db-path ./marketplace.db
 
       - name: Verify Database File Exists
         run: |
