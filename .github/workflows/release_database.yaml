@@ -1,49 +1,55 @@
 name: Build and Release Marketplace Database
 
-# Trigger the workflow only when a new release is published
 on:
   release:
-    types: [published] # Runs after you hit "Publish release" on GitHub
+    types: [published]
 
 permissions:
-  contents: write # Needed to write release assets
+  contents: write
 
 jobs:
   build-db:
     name: Build Marketplace DB
-    runs-on: ubuntu-latest # Use a standard Linux runner
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        # Checks out the specific commit tagged for the release
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10' # Or your preferred Python version
-          cache: 'pip' # Cache pip dependencies
+          python-version: '3.10'
+          cache: 'pip'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
       - name: 1. Create Database Schema
-        run: python src/create_db.py --db-path ./marketplace.db
-        # Creates the marketplace.db file with tables/indexes in the workspace
+        run: python create_db.py --db-path ./marketplace.db
+
+      # --- ADD THIS STEP ---
+      - name: 1.5. Update Build Info Table
+        run: |
+          BUILD_TIMESTAMP=$(date --iso-8601=seconds) # Get UTC timestamp
+          python update_build_info.py \
+            --db-path ./marketplace.db \
+            --tag "${{ github.event.release.tag_name }}" \
+            --commit-sha "${{ github.sha }}" \
+            --timestamp "$BUILD_TIMESTAMP"
+      # --- END OF ADDED STEP ---
 
       - name: 2. Load Catalogs from YAML
-        run: python src/load_yaml.py --db-path ./marketplace.db --yaml-path ./catalogs.yaml
-        # Populates the Catalog table using catalogs.yaml from the repo root
+        run: python load_yaml.py --db-path ./marketplace.db --yaml-path ./catalogs.yaml
 
       - name: 3. Load Cabinets from Catalogs (Downloads CSVs)
-        run: python src/load_cabinets.py --db-path ./marketplace.db
-        # Reads Catalog table, downloads/processes CSVs, populates Cabinet table
+        run: python load_cabinets.py --db-path ./marketplace.db
 
       - name: Verify Database File Exists
         run: |
           if [ -f ./marketplace.db ]; then
             echo "marketplace.db successfully created."
-            ls -lh ./marketplace.db # Show file size
+            ls -lh ./marketplace.db
           else
             echo "Error: marketplace.db not found after scripts execution!"
             exit 1
@@ -54,8 +60,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ github.event.release.upload_url }} # URL provided by the release event
-          asset_path: ./marketplace.db      # Path to the file to upload
-          asset_name: marketplace.db       # Name of the asset in the release
-          asset_content_type: application/vnd.sqlite3 # Correct MIME type for SQLite3
-          # Alternatively use: application/octet-stream if unsure
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./marketplace.db
+          asset_name: marketplace.db
+          asset_content_type: application/vnd.sqlite3

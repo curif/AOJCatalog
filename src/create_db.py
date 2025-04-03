@@ -63,6 +63,17 @@ def initialize_database(db_path):
                 Notes TEXT
                 );
         """)
+
+        # --- Create BuildInfo Table ---  <-- ADD THIS SECTION -->
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS BuildInfo (
+                BuildTag TEXT PRIMARY KEY NOT NULL,
+                BuildCommitSHA TEXT NOT NULL,
+                BuildTimestampUTC TEXT NOT NULL
+            );
+        """)
+        print("-> Executed: CREATE TABLE IF NOT EXISTS BuildInfo")
+
         #PRIMARY KEY (CatalogName, Name),
         #FOREIGN KEY (CatalogName) REFERENCES Catalog(CatalogName) ON DELETE CASCADE
             
